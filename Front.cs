@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SDWebScraper
 {
@@ -11,9 +7,22 @@ namespace SDWebScraper
     {
         static void Main(string[] args)
         {
-            string[] lines = System.IO.File.ReadAllLines(@"C:\Users\Jorda\Documents\visual studio 2015\Projects\SDWebScraper\SDWebScraper\bin\Debug\URLList.txt");
+            // Window formatting
+            try
+            {
+                Console.WindowWidth = 150;
+                Console.WindowHeight = 35;
+            }
+            catch (Exception)
+            {
+                // Usually means monitor resolution program is being run on is small. 
+                // If happens just leave the console default size.
+            }
 
-            System.Console.WriteLine("Contents of URLList.txt =:");
+            // Set this to the URLList location.
+            string[] lines = File.ReadAllLines(@"C:\Users\Jorda\Documents\visual studio 2015\Projects\SDWebScraper\SDWebScraper\bin\Debug\URLList.txt");
+
+            // Split URL List into individual URLs and parse each URL.
             foreach (string line in lines)
             {
                 string source = HTMLWorker.getSource(line);
@@ -25,6 +34,7 @@ namespace SDWebScraper
             System.Console.ReadKey();
         }
 
+        // Used for debugging
         private static void saveSourceToFile(string source)
         {
             StreamWriter sw = new StreamWriter("argos.txt");

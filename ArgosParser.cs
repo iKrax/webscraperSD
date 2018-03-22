@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SDWebScraper
 {
@@ -10,32 +6,36 @@ namespace SDWebScraper
     {
         public static void beginParse(string source)
         {
+            // Begin Parsing.
             searchForProductPanel(source);
-            //Console.ReadLine();
         }
 
         private static void searchForProductPanel(string source)
         {
+            // Used to determine when closing tag has been found.
             bool continueRunning = true;
 
             while (continueRunning == true)
             {
-                //Calculate start of product card
+                // Locate start of product card.
                 int indexOfCardStart = source.IndexOf("ac-product-link ac-product-card__details") - 10;
 
+                // If indexOfCardStart is -11, no more products located on the page.
+                // -11 since string.IndexOf returns -1 if search is not found, minus the 10 to locate the opening "<".
                 if (indexOfCardStart != -11)
                 {
-                    //Extract codeblock with data inside
+                    // Extract codeblock with data inside.
                     string codeblock = findCodeBlock(indexOfCardStart, source);
 
-                    //Remove selected codeblock from code
+                    // Remove selected codeblock from code.
                     source = source.Replace(codeblock, "");
 
-                    //Parse codeblock for info
+                    // Parse codeblock for info.
                     parseCodeBlock(codeblock);
                 }
                 else
                 {
+                    // No products left on page.
                     continueRunning = false;
                 }
             } 
@@ -43,28 +43,34 @@ namespace SDWebScraper
 
         private static string findCodeBlock(int currentIndex, string source)
         {
+            // Save startIndex for later use.
             int startIndex = currentIndex;
+            // Used to find the ending >. 
+            // Logic for this is that for every opening tag (<), there must be one closing tag (>).
+            // So every opening tag, bracketThisLoops is incremented by 1, and every closing tag
+            // bracetsThisLoop is reduced by 1. (There are a few exclusions to this rule, but they
+            // have been coded in already.)
             short bracketsThisLoop = 1;
             bool isSearchDone = false;
 
             do
             {
-                //Increase index
+                // Increase index by 1
                 currentIndex++;
 
-                //Search for starting tags
+                // Search for starting tags
                 if ((source.Substring(currentIndex, 1) == "<") && (source.Substring(currentIndex + 1, 1) != "/"))
                 {
                     bracketsThisLoop++;
                 }
 
-                //Search for ending tags
+                // Search for ending tags
                 else if ((source.Substring(currentIndex, 1) == "<") && (source.Substring(currentIndex + 1, 1) == "/"))
                 {
                     bracketsThisLoop--;
                 }
 
-                //Clean up numbers
+                // Clean up numbers
                 if ((source.Substring(currentIndex, 1) == "<") && (source.Substring(currentIndex + 1, 1) == "!"))
                 {
                     bracketsThisLoop--;
@@ -75,21 +81,32 @@ namespace SDWebScraper
                     bracketsThisLoop--;
                 }
 
-                //If bracketsThisLoop is 0, all opening tags are accounted for
+                // If bracketsThisLoop is 0, all opening tags are accounted for
                 if (bracketsThisLoop == 0)
                 {
                     isSearchDone = true;
                 }
-
             } while (isSearchDone == false);
 
+            // Select code block and copy it so variable "substring". The plus 4 in this
+            // statement is due to the length of the closing tag (</div>)
             string substring = source.Substring(startIndex, (currentIndex - startIndex + 4));
             return substring;
         }
 
         private static void parseCodeBlock(string codeblock)
         {
+            // Formatting for output
+            const string format = "{0,-80} {1,-10} {2,-18} {3,-10}";
+            string name;
+            string prodnumber;
+            string rating;
+            string price;
+            
+            
             string code = codeblock;
+
+            // Search for product name.
             int indexStart = code.IndexOf("aria-label=\"");
             indexStart = indexStart +12;
             int indexStop = indexStart;
@@ -97,8 +114,9 @@ namespace SDWebScraper
             {
                 indexStop++;
             } while (code.Substring(indexStop, 1) != "\"");
-            Console.Write(code.Substring(indexStart, indexStop - indexStart) + " | ");
-
+            name = (code.Substring(indexStart, indexStop - indexStart));
+            
+            // Search for product number
             indexStart = code.IndexOf("/product/");
             indexStart = indexStart + 8;
             indexStop = indexStart;
@@ -106,8 +124,9 @@ namespace SDWebScraper
             {
                 indexStop++;
             } while (code.Substring(indexStop, 1) != "\"");
-            Console.Write(code.Substring(indexStart + 1, indexStop - indexStart - 1) + " | ");
+            prodnumber = (code.Substring(indexStart + 1, indexStop - indexStart - 1));
 
+            // Search for rating (out of 5)
             indexStart = code.IndexOf("data-star-rating=\"");
             indexStart = indexStart + 17;
             if (indexStart != 16)
@@ -117,13 +136,14 @@ namespace SDWebScraper
                 {
                     indexStop++;
                 } while (code.Substring(indexStop, 1) != "\"");
-                Console.Write(code.Substring(indexStart + 1, indexStop - indexStart - 1) + " of 5 | ");
+                rating = (code.Substring(indexStart + 1, indexStop - indexStart - 1));
             }
             else
             {
-                Console.Write("Rating not found | ");
+                rating = ("Rating not found");
             }            
 
+            // Search for price
             indexStart = code.IndexOf("<meta itemProp=\"price\" content=\"");
             indexStart = indexStart + 31;
             indexStop = indexStart;
@@ -131,7 +151,10 @@ namespace SDWebScraper
             {
                 indexStop++;
             } while (code.Substring(indexStop, 1) != "\"");
-            Console.WriteLine("£" + code.Substring(indexStart + 1, indexStop - indexStart - 1) + " | ");
+            price = ("£" + code.Substring(indexStart + 1, indexStop - indexStart - 1));
+
+            string output = string.Format(format, name, prodnumber, rating, price);
+            Console.WriteLine(output);
         }
     }
 }
